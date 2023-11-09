@@ -1,5 +1,6 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'logic.dart';
 import 'map.dart';
@@ -47,41 +48,35 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return LayoutBuilder(builder: (context, constraints) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       return Scaffold(
-        body: Row(
-          children: [
-            SafeArea(
-              child: NavigationRail(
-                extended: constraints.maxWidth >= 600,
-                destinations: [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.home),
-                    label: Text('Home'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.favorite),
-                    label: Text('Favorites'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.map),
-                    label: Text('Map'),
-                  )
-                ],
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
-                },
-              ),
+        body: Center(
+          child: Container(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: page,
+          ),
+        ),
+        bottomNavigationBar: NavigationBar(
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.home),
+              label: 'Home',
             ),
-            Expanded(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: page,
-              ),
+            NavigationDestination(
+              icon: Icon(Icons.favorite),
+              label: 'Favorites',
             ),
+            NavigationDestination(
+              icon: Icon(Icons.map),
+              label: 'Map',
+            )
           ],
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (value) {
+            setState(() {
+              selectedIndex = value;
+            });
+          },
         ),
       );
     });
