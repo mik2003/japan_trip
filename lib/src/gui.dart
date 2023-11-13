@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'logic.dart';
 import 'map.dart';
+import 'sheets_api.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -40,46 +41,83 @@ class _MyHomePageState extends State<MyHomePage> {
       case 0:
         page = GeneratorPage();
       case 1:
-        page = FavoritesPage();
+        page = Placeholder();
       case 2:
+        page = LocationsPage();
+      case 3:
         page = MapPage();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
 
-    return LayoutBuilder(builder: (context, constraints) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      return Scaffold(
-        body: Center(
-          child: Container(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: page,
-          ),
-        ),
-        bottomNavigationBar: NavigationBar(
-          destinations: [
-            NavigationDestination(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.favorite),
-              label: 'Favorites',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.map),
-              label: 'Map',
-            )
-          ],
-          selectedIndex: selectedIndex,
-          onDestinationSelected: (value) {
-            setState(() {
-              selectedIndex = value;
-            });
-          },
-        ),
+    
+    List<(Icon, String)> navigationDestinations = [
+      (Icon(Icons.home), 'Home'),
+      (Icon(Icons.person), 'Login'),
+      (Icon(Icons.place), 'Locations'),
+      (Icon(Icons.map), 'Map')
+    ];
+
+    List<NavigationDestination> navigationBarDestinations = [];
+    List<NavigationRailDestination> navigationRailDestinations = [];
+
+    for (final item in navigationDestinations) {
+      navigationBarDestinations.add(
+        NavigationDestination(icon: item.$1, label: item.$2)
       );
-    });
+      navigationRailDestinations.add(
+        NavigationRailDestination(icon: item.$1, label: Text(item.$2))
+      );
+    }
+      
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        if (orientation == Orientation.portrait) {
+          return Scaffold(
+            body: Center(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
+            ),
+            bottomNavigationBar: NavigationBar(
+              destinations: navigationBarDestinations,
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (value) {
+                setState(() {
+                  selectedIndex = value;
+                });
+              },
+            ),
+          );
+        } else {
+          return Scaffold(
+            body: Row(
+              children: [
+                SafeArea(
+                  child: NavigationRail(
+                    destinations: navigationRailDestinations,
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: (value) {
+                      setState(() {
+                        selectedIndex = value;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: page,
+                  ),
+                ),
+              ]
+            ),
+          );
+        }
+      }
+    );
   }
 }
 
@@ -184,3 +222,32 @@ class FavoritesPage extends StatelessWidget {
     );
   }
 }
+
+
+class LocationsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<List<dynamic>>>(
+      future: getSheetData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator(); // Show a loading indicator while waiting for data.
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          var locations = snapshot.data!;
+          return ListView(
+            children: [
+              for (var location in locations)
+                if (location.isNotEmpty)
+                  ListTile(
+                    title: Text(location[0].toString()),
+                  )
+            ],
+          );
+        }
+      },
+    );
+  }
+}
+
